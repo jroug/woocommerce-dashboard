@@ -1,5 +1,5 @@
 export type ProductStatus = "publish" | "draft" | "pending" | "private" | "future" | "trash";
-export type ProductType = "simple" | "variable";
+export type ProductType = "simple" | "variable" | "grouped" | "external";
 export type StockStatus = "instock" | "outofstock" | "onbackorder";
 export type InventoryFilter = "all" | "in-stock" | "low-stock" | "out-of-stock";
 export type PriceFilter = "all" | "under-50" | "50-100" | "over-100";
@@ -39,7 +39,7 @@ export interface ProductVariant {
   name: string;
   sku: string;
   price: string;
-  stockQuantity: number;
+  stockQuantity: number | null;
   stockStatus: StockStatus;
 }
 export interface ProductSeo {
@@ -75,6 +75,11 @@ export interface Product {
 }
 
 export interface ProductDetails extends Product {
+  readOnly?: boolean;
+  permalink?: string;
+  shortDescription?: string;
+  weightUnit?: string;
+  dimensionUnit?: string;
   description: string;
   images: ProductImage[];
   cost: string;
@@ -91,6 +96,6 @@ export interface ProductDetails extends Product {
   options: ProductOption[];
   variants: ProductVariant[];
   seo: ProductSeo;
-  revenue: string;
-  ordersCount: number;
+  revenue: string | null;
+  ordersCount: number | null;
 }

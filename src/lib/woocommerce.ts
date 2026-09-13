@@ -133,42 +133,49 @@ export async function getWooCommerceProducts() {
       ? item.categories
       : [{ id: 0, name: "Uncategorized", slug: "uncategorized" }];
     itemCategories.forEach((category) => categories.set(category.id, category));
-    return {
-      id: item.id,
-      name: item.name,
-      slug: item.slug,
-      sku: item.sku,
-      status: item.status,
-      type: item.type === "variable" ? "variable" : "simple",
-      price: item.price,
-      regularPrice: item.regular_price,
-      salePrice: item.sale_price,
-      currency: currencySetting.data.value,
-      stockQuantity: item.stock_quantity,
-      stockStatus: item.stock_status,
-      manageStock: item.manage_stock,
-      lowStockThreshold: item.low_stock_amount ?? 2,
-      category: itemCategories[0],
-      categories: itemCategories,
-      image: item.images[0] ?? { id: 0, src: "/products/placeholder.svg", alt: "No product image" },
-      totalSales: item.total_sales,
-      tags: item.tags.map((tag) => tag.name),
-      brands: (item.brands ?? []).map((brand) => brand.name),
-      dateModified: item.date_modified_gmt
-        ? `${item.date_modified_gmt}Z`
-        : item.date_modified || null,
-      datePublished: ["publish", "private"].includes(item.status)
-        ? item.date_created_gmt
-          ? `${item.date_created_gmt}Z`
-          : item.date_created
-        : null,
-      dateCreated: item.date_created_gmt ? `${item.date_created_gmt}Z` : item.date_created,
-    };
+    return mapWooProduct(item, currencySetting.data.value);
   });
   return {
     products,
     categories: [...categories.values()].sort((a, b) => a.name.localeCompare(b.name)),
     currency: currencySetting.data.value,
+  };
+}
+
+function mapWooProduct(item: WooProduct, currency: string): Product {
+  const itemCategories = item.categories.length
+    ? item.categories
+    : [{ id: 0, name: "Uncategorized", slug: "uncategorized" }];
+  return {
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    sku: item.sku,
+    status: item.status,
+    type: item.type as Product["type"],
+    price: item.price,
+    regularPrice: item.regular_price,
+    salePrice: item.sale_price,
+    currency,
+    stockQuantity: item.stock_quantity,
+    stockStatus: item.stock_status,
+    manageStock: item.manage_stock,
+    lowStockThreshold: item.low_stock_amount ?? 2,
+    category: itemCategories[0],
+    categories: itemCategories,
+    image: item.images[0] ?? { id: 0, src: "/products/placeholder.svg", alt: "No product image" },
+    totalSales: item.total_sales,
+    tags: item.tags.map((tag) => tag.name),
+    brands: (item.brands ?? []).map((brand) => brand.name),
+    dateModified: item.date_modified_gmt
+      ? `${item.date_modified_gmt}Z`
+      : item.date_modified || null,
+    datePublished: ["publish", "private"].includes(item.status)
+      ? item.date_created_gmt
+        ? `${item.date_created_gmt}Z`
+        : item.date_created
+      : null,
+    dateCreated: item.date_created_gmt ? `${item.date_created_gmt}Z` : item.date_created,
   };
 }
 
@@ -574,4 +581,112 @@ export async function getWooCommerceCustomerDetails(id: string) {
     timeline: timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
   };
   return { customer: details, orders };
+}
+
+interface WooProductDetails extends WooProduct {
+  description: string;
+  short_description: string;
+  permalink: string;
+  global_unique_id?: string;
+  backorders: import("@/types/product").Backorders;
+  virtual: boolean;
+  weight: string;
+  dimensions: import("@/types/product").ProductDimensions;
+  shipping_class: string;
+  shipping_class_id: number;
+  attributes: { id: number; name: string; options: string[]; variation: boolean }[];
+  meta_data: { key: string; value: unknown }[];
+  cogs_value?: number | null;
+}
+interface WooVariation {
+  id: number;
+  sku: string;
+  price: string;
+  stock_quantity: number | null;
+  stock_status: StockStatus;
+  attributes: { name: string; option: string }[];
+}
+
+export async function getWooCommerceProductDetails(id: string) {
+  if (!/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) return null;
+  let item: WooProductDetails;
+  try {
+    item = (await wooRequest<WooProductDetails>(`products/${id}`)).data;
+  } catch (error) {
+    if (error instanceof WooCommerceError && error.status === 404) return null;
+    throw error;
+  }
+  const [currency, categories, variants, weightUnit, dimensionUnit, shippingClass] =
+    await Promise.all([
+      wooRequest<{ value: string }>("settings/general/woocommerce_currency"),
+      getAllWooPages<ProductCategory>(
+        "products/categories?hide_empty=false&orderby=name&order=asc",
+      ),
+      item.type === "variable"
+        ? getAllWooPages<WooVariation>(`products/${id}/variations?orderby=id&order=asc`)
+        : Promise.resolve([]),
+      wooRequest<{ value: string }>("settings/products/woocommerce_weight_unit"),
+      wooRequest<{ value: string }>("settings/products/woocommerce_dimension_unit"),
+      item.shipping_class_id
+        ? wooRequest<{ name: string }>(`products/shipping_classes/${item.shipping_class_id}`).then(
+            (result) => result.data.name,
+          )
+        : Promise.resolve("No shipping class"),
+    ]);
+  const metaText = (...keys: string[]) => {
+    for (const key of keys) {
+      const value = item.meta_data.find((meta) => meta.key === key)?.value;
+      if (typeof value === "string" || typeof value === "number") return String(value);
+    }
+    return "";
+  };
+  const product: import("@/types/product").ProductDetails = {
+    ...mapWooProduct(item, currency.data.value),
+    readOnly: true,
+    permalink: item.permalink,
+    description: item.description || "",
+    shortDescription: item.short_description || "",
+    images: item.images,
+    cost:
+      item.cogs_value != null
+        ? String(item.cogs_value)
+        : metaText("_wc_cog_cost", "_alg_wc_cog_cost"),
+    barcode: item.global_unique_id || metaText("_global_unique_id"),
+    backorders: item.backorders,
+    physicalProduct: !item.virtual,
+    weight: item.weight,
+    weightUnit: weightUnit.data.value,
+    dimensionUnit: dimensionUnit.data.value,
+    dimensions: item.dimensions,
+    shippingClass,
+    categories: item.categories,
+    tags: item.tags.map((tag) => tag.name),
+    brand: (item.brands ?? []).map((brand) => brand.name).join(", "),
+    productTypeLabel: item.type,
+    options: item.attributes
+      .filter((attribute) => attribute.variation)
+      .map((attribute, index) => ({
+        id: attribute.id || -(index + 1),
+        name: attribute.name,
+        values: attribute.options,
+      })),
+    variants: variants.map((variant) => ({
+      id: variant.id,
+      name:
+        variant.attributes
+          .map((attribute) => `${attribute.name}: ${attribute.option || "Any"}`)
+          .join(" / ") || `Variation #${variant.id}`,
+      sku: variant.sku,
+      price: variant.price,
+      stockQuantity: variant.stock_quantity,
+      stockStatus: variant.stock_status,
+    })),
+    seo: {
+      title: metaText("_yoast_wpseo_title", "rank_math_title"),
+      description: metaText("_yoast_wpseo_metadesc", "rank_math_description"),
+    },
+    revenue: null,
+    ordersCount: null,
+  };
+  return { product, categories };
 }

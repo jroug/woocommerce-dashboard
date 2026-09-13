@@ -23,6 +23,15 @@ export function ProductInformation({
             onChange={(e) => onChange({ description: e.target.value })}
           />
         </FormField>
+        {product.shortDescription && (
+          <FormField label="Short description">
+            <TextArea
+              rows={3}
+              value={product.shortDescription}
+              onChange={(e) => onChange({ shortDescription: e.target.value })}
+            />
+          </FormField>
+        )}
       </div>
     </section>
   );

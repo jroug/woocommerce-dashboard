@@ -17,7 +17,7 @@ export function ProductSeo({
           {product.seo.title || product.name}
         </p>
         <p className="mt-0.5 text-[11px] text-[var(--color-success)]">
-          northstar.example/products/{product.slug}
+          {product.permalink || `/${product.slug}`}
         </p>
         <p className="mt-1 line-clamp-2 text-[12px] text-[var(--color-text-secondary)]">
           {product.seo.description}

@@ -1,6 +1,5 @@
 import type { ProductDetails } from "@/types/product";
 import { FormField, TextInput } from "./ProductFormField";
-const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
 export function ProductPricing({
   product,
   onChange,
@@ -10,6 +9,8 @@ export function ProductPricing({
   onChange: (patch: Partial<ProductDetails>) => void;
   error?: string;
 }) {
+  const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: product.currency });
+  const symbol = money.formatToParts(0).find((part) => part.type === "currency")?.value;
   const price = Number(product.price) || 0;
   const cost = Number(product.cost) || 0;
   const profit = price - cost;
@@ -21,7 +22,7 @@ export function ProductPricing({
         <FormField label="Price" error={error}>
           <div className="relative">
             <span className="absolute left-2.5 top-1.5 text-[13px] text-[var(--color-text-muted)]">
-              €
+              {symbol}
             </span>
             <TextInput
               type="number"
@@ -36,7 +37,7 @@ export function ProductPricing({
         <FormField label="Regular price">
           <div className="relative">
             <span className="absolute left-2.5 top-1.5 text-[13px] text-[var(--color-text-muted)]">
-              €
+              {symbol}
             </span>
             <TextInput
               type="number"
@@ -48,10 +49,19 @@ export function ProductPricing({
             />
           </div>
         </FormField>
+        <FormField label="Sale price">
+          <TextInput
+            type="number"
+            min="0"
+            step="0.01"
+            value={product.salePrice}
+            onChange={(e) => onChange({ salePrice: e.target.value })}
+          />
+        </FormField>
         <FormField label="Cost per item">
           <div className="relative">
             <span className="absolute left-2.5 top-1.5 text-[13px] text-[var(--color-text-muted)]">
-              €
+              {symbol}
             </span>
             <TextInput
               type="number"
@@ -68,12 +78,12 @@ export function ProductPricing({
         <div>
           <p className="text-[var(--color-text-muted)]">Profit</p>
           <p className={`font-semibold ${profit < 0 ? "text-[var(--color-error)]" : ""}`}>
-            {money.format(profit)}
+            {product.cost === "" ? "—" : money.format(profit)}
           </p>
         </div>
         <div>
           <p className="text-[var(--color-text-muted)]">Margin</p>
-          <p className="font-semibold">{margin.toFixed(1)}%</p>
+          <p className="font-semibold">{product.cost === "" ? "—" : `${margin.toFixed(1)}%`}</p>
         </div>
       </div>
     </section>

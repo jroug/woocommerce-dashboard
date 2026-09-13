@@ -19,7 +19,7 @@ export function ProductShipping({
       />
       {product.physicalProduct && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <FormField label="Weight" helper="Kilograms">
+          <FormField label="Weight" helper={product.weightUnit ?? "kg"}>
             <TextInput
               type="number"
               min="0"
@@ -34,6 +34,7 @@ export function ProductShipping({
               onChange={(e) => onChange({ shippingClass: e.target.value })}
               className="admin-control h-8 w-full px-2 text-[13px] outline-none"
             >
+              <option>{product.shippingClass}</option>
               <option>Standard</option>
               <option>Bulky</option>
               <option>Fragile</option>
@@ -41,7 +42,10 @@ export function ProductShipping({
           </FormField>
           <div className="grid grid-cols-3 gap-2 sm:col-span-2">
             {(["length", "width", "height"] as const).map((key) => (
-              <FormField label={`${key[0].toUpperCase()}${key.slice(1)} (cm)`} key={key}>
+              <FormField
+                label={`${key[0].toUpperCase()}${key.slice(1)} (${product.dimensionUnit ?? "cm"})`}
+                key={key}
+              >
                 <TextInput
                   type="number"
                   min="0"

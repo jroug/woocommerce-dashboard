@@ -118,7 +118,7 @@ export function ProductVariants({
                   <TextInput
                     type="number"
                     min="0"
-                    value={variant.stockQuantity}
+                    value={variant.stockQuantity ?? ""}
                     onChange={(e) =>
                       updateVariant(variant.id, { stockQuantity: Number(e.target.value) })
                     }
@@ -126,9 +126,13 @@ export function ProductVariants({
                 </td>
                 <td className="px-2 py-2">
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] ${variant.stockQuantity > 0 ? "bg-[var(--color-success-bg)] text-[var(--color-success)]" : "bg-[var(--color-error-bg)] text-[var(--color-error)]"}`}
+                    className={`rounded-full px-2 py-0.5 text-[11px] ${variant.stockStatus === "instock" ? "bg-[var(--color-success-bg)] text-[var(--color-success)]" : "bg-[var(--color-error-bg)] text-[var(--color-error)]"}`}
                   >
-                    {variant.stockQuantity > 0 ? "In stock" : "Out of stock"}
+                    {variant.stockStatus === "onbackorder"
+                      ? "On backorder"
+                      : variant.stockStatus === "instock"
+                        ? "In stock"
+                        : "Out of stock"}
                   </span>
                 </td>
                 <td className="px-2">

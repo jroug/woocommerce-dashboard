@@ -39,12 +39,18 @@ export function ProductMedia({
         </button>
       </header>
       <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:p-5">
+        {product.images.length === 0 && (
+          <p className="col-span-full text-[13px] text-[var(--color-text-muted)]">
+            No product images.
+          </p>
+        )}
         {product.images.map((image, index) => (
           <div
             className={`group relative overflow-hidden rounded-[var(--radius-md)] border bg-[var(--color-surface-subdued)] ${index === 0 ? "col-span-2 row-span-2 sm:col-span-2" : ""}`}
             key={image.id}
           >
             <Image
+              unoptimized
               src={image.src}
               alt={image.alt}
               width={index === 0 ? 480 : 220}

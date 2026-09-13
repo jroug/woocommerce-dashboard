@@ -1,19 +1,20 @@
 import { AppShell } from "@/components/dashboard/AppShell";
 import { ProductDetailsForm } from "@/components/products/ProductDetailsForm";
 import { ProductNotFound } from "@/components/products/ProductNotFound";
-import { getProductDetails } from "@/data/productDetails";
-import { productCategories, products } from "@/data/products";
+import { getWooCommerceProductDetails } from "@/lib/woocommerce";
+
+export const dynamic = "force-dynamic";
 
 export default async function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  // Next.js supplies route params asynchronously, even for this local fixture lookup.
   const { id } = await params;
-  const product = products.find((item) => String(item.id) === id);
+  const result = await getWooCommerceProductDetails(id);
   return (
-    <AppShell activeSection="products" mobileTitle={product?.name ?? "Product"}>
-      {product ? (
+    <AppShell activeSection="products" mobileTitle={result?.product.name ?? "Product"}>
+      {result ? (
         <ProductDetailsForm
-          initialProduct={getProductDetails(product)}
-          categories={productCategories}
+          key={result.product.id}
+          initialProduct={result.product}
+          categories={result.categories}
         />
       ) : (
         <ProductNotFound />

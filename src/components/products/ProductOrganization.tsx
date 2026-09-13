@@ -37,6 +37,8 @@ export function ProductOrganization({
           >
             <option value="simple">Simple product</option>
             <option value="variable">Variable product</option>
+            <option value="grouped">Grouped product</option>
+            <option value="external">External product</option>
           </select>
         </FormField>
         <FormField label="Brand / vendor">

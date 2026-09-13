@@ -4,7 +4,7 @@
 
 A basic e-commerce administration dashboard built with Next.js, presented under the Northstar Commerce demo brand. This portfolio project focuses on dashboard layout, navigation, reusable components, and everyday store-management interactions.
 
-**The products, orders, and customers lists, plus order detail pages, read from WooCommerce.** Other pages, including the product detail editor, still use mock data. Product writes are not connected.
+**The products, orders, and customers lists, plus order detail pages, read from WooCommerce.** Dashboard and analytics pages still use mock data. Product writes are not connected. Product detail pages load real WooCommerce data in the existing read-only form layout.
 
 ## Concept
 
@@ -128,3 +128,5 @@ For this local MAMP installation, `.env.local` also sets `WOOCOMMERCE_LOCAL_CERT
 The orders list fetches all WooCommerce order pages, including guest billing information, line-item quantities, order status, payment date-derived payment status, totals, and each order’s currency. Date filters use the current date. Order detail pages load the selected order and all its notes from WooCommerce. They show real line items, billing/shipping addresses, payment information, fees, refunds, and recorded creation/payment/completion dates. Missing tracking and customer lifetime metrics are not fabricated. Order actions remain unimplemented; the live detail view is read-only.
 
 The customers list loads every page of WooCommerce’s `wc-analytics/reports/customers` report, including guest customers when present in analytics. Names, usernames, last activity, registration dates, order counts, lifetime spend, AOV, and location fields come directly from that report, respecting WooCommerce’s analytics status rules. Dates are displayed in the store’s local calendar dates. Summary cards reflect all filtered rows: customer count, mean order count, mean lifetime spend, and mean customer AOV (excluding null AOVs, as WooCommerce does). Customer detail pages load WooCommerce profiles and full order history, while retaining the same analytics metrics as the list. Guest profiles use the latest matching guest order for contact/address details. Checkout notes and recorded activity replace demo content. Customer editing and bulk actions are not connected.
+
+Product detail pages fetch a single WooCommerce product, all its variations and available categories, store currency, shipping class, and measurement units. They display real media, descriptions, regular/sale prices, inventory, tags, brands, barcode, and available cost/SEO metadata. Missing revenue/order-count statistics are shown as unavailable. The form remains read-only until save operations are implemented.
