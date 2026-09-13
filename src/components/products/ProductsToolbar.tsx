@@ -2,6 +2,7 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 import type { InventoryFilter, PriceFilter, ProductSort, ProductStatus } from "@/types/product";
 import type { ProductCategory } from "@/types/product";
 interface Props {
+  currency: string;
   query: string;
   status: ProductStatus | "all";
   category: string;
@@ -20,6 +21,12 @@ interface Props {
 }
 const selectClass = "admin-control h-8 cursor-pointer px-2 text-[12px] font-medium outline-none";
 export function ProductsToolbar(props: Props) {
+  const money = (value: number) =>
+    new Intl.NumberFormat("en-IE", {
+      style: "currency",
+      currency: props.currency,
+      maximumFractionDigits: 0,
+    }).format(value);
   return (
     <div className="border-b bg-[var(--color-surface-subdued)] p-3">
       <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
@@ -45,9 +52,12 @@ export function ProductsToolbar(props: Props) {
             className={selectClass}
           >
             <option value="all">All statuses</option>
-            <option value="active">Active</option>
+            <option value="publish">Published</option>
             <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
+            <option value="pending">Pending review</option>
+            <option value="private">Private</option>
+            <option value="future">Scheduled</option>
+            <option value="trash">Trash</option>
           </select>
           <select
             aria-label="Category"
@@ -80,9 +90,11 @@ export function ProductsToolbar(props: Props) {
             className={selectClass}
           >
             <option value="all">All prices</option>
-            <option value="under-50">Under €50</option>
-            <option value="50-100">€50–€100</option>
-            <option value="over-100">Over €100</option>
+            <option value="under-50">Under {money(50)}</option>
+            <option value="50-100">
+              {money(50)}–{money(100)}
+            </option>
+            <option value="over-100">Over {money(100)}</option>
           </select>
           <select
             aria-label="Sort products"

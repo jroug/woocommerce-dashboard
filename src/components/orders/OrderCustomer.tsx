@@ -1,9 +1,9 @@
 import { Mail, Phone } from "lucide-react";
 import type { OrderDetails } from "@/types/order";
-const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
 export function OrderCustomer({ order }: { order: OrderDetails }) {
-  const name = `${order.customer.firstName} ${order.customer.lastName}`;
-  const initials = `${order.customer.firstName[0]}${order.customer.lastName[0]}`;
+  const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: order.currency });
+  const name = `${order.customer.firstName} ${order.customer.lastName}`.trim() || "Guest";
+  const initials = `${order.customer.firstName[0] ?? ""}${order.customer.lastName[0] ?? ""}` || "G";
   return (
     <section className="admin-card">
       <header className="border-b px-4 py-3.5">
@@ -17,7 +17,7 @@ export function OrderCustomer({ order }: { order: OrderDetails }) {
           <div>
             <p className="text-[13px] font-semibold">{name}</p>
             <p className="text-[11px] text-[var(--color-text-muted)]">
-              Customer #{order.customer.id}
+              {order.customer.id ? `Customer #${order.customer.id}` : "Guest checkout"}
             </p>
           </div>
         </div>
@@ -40,11 +40,15 @@ export function OrderCustomer({ order }: { order: OrderDetails }) {
         <div className="mt-4 grid grid-cols-2 gap-2 rounded-[var(--radius-md)] bg-[var(--color-surface-subdued)] p-3 text-[12px]">
           <div>
             <p className="text-[var(--color-text-muted)]">Orders</p>
-            <p className="font-semibold">{order.customerOrdersCount}</p>
+            <p className="font-semibold">{order.customerOrdersCount ?? "—"}</p>
           </div>
           <div>
             <p className="text-[var(--color-text-muted)]">Total spent</p>
-            <p className="font-semibold">{money.format(Number(order.customerTotalSpent))}</p>
+            <p className="font-semibold">
+              {order.customerTotalSpent === null
+                ? "—"
+                : money.format(Number(order.customerTotalSpent))}
+            </p>
           </div>
         </div>
       </div>

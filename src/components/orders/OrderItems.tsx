@@ -1,7 +1,13 @@
 import Image from "next/image";
 import type { OrderDetailLineItem } from "@/types/order";
-const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
-export function OrderItems({ items }: { items: OrderDetailLineItem[] }) {
+export function OrderItems({
+  items,
+  currency,
+}: {
+  items: OrderDetailLineItem[];
+  currency: string;
+}) {
+  const money = new Intl.NumberFormat("en-IE", { style: "currency", currency });
   return (
     <section className="admin-card overflow-hidden">
       <header className="border-b px-4 py-3.5 sm:px-5">
@@ -14,6 +20,7 @@ export function OrderItems({ items }: { items: OrderDetailLineItem[] }) {
             className="grid grid-cols-[48px_minmax(0,1fr)] gap-3 px-4 py-3 sm:grid-cols-[48px_minmax(0,1fr)_auto_auto] sm:items-center sm:px-5"
           >
             <Image
+              unoptimized
               src={item.image}
               alt=""
               width={48}

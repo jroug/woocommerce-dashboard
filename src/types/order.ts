@@ -1,5 +1,12 @@
 export type OrderStatus =
-  "pending" | "processing" | "on-hold" | "completed" | "cancelled" | "refunded" | "failed";
+  | "pending"
+  | "processing"
+  | "on-hold"
+  | "completed"
+  | "cancelled"
+  | "refunded"
+  | "failed"
+  | (string & {});
 
 export type PaymentStatus = "paid" | "pending" | "refunded" | "failed";
 export type OrderSort = "newest" | "oldest" | "highest" | "lowest";
@@ -41,7 +48,7 @@ export interface OrderAddress {
   phone?: string;
 }
 
-export type FulfillmentStatus = "unfulfilled" | "fulfilled" | "shipped";
+export type FulfillmentStatus = "unfulfilled" | "fulfilled" | "shipped" | "unknown";
 export interface OrderTimelineEvent {
   id: number;
   title: string;
@@ -62,7 +69,11 @@ export interface OrderDetails extends Omit<Order, "lineItems"> {
   discountTotal: string;
   shippingTotal: string;
   taxTotal: string;
-  amountPaid: string;
+  amountPaid: string | null;
+  readOnly?: boolean;
+  source?: string;
+  fees?: { name: string; total: string }[];
+  refundedTotal?: string;
   paymentMethodTitle: string;
   transactionId: string;
   datePaid: string | null;
@@ -75,20 +86,20 @@ export interface OrderDetails extends Omit<Order, "lineItems"> {
   carrier: string | null;
   dateFulfilled: string | null;
   customerPhone: string;
-  customerOrdersCount: number;
-  customerTotalSpent: string;
+  customerOrdersCount: number | null;
+  customerTotalSpent: string | null;
   customerNote: string;
   notes: OrderNote[];
   timeline: OrderTimelineEvent[];
 }
 
-/** Mirrors the fields we will later map from a WooCommerce order response. */
+/** Normalized WooCommerce order fields used by the list. */
 export interface Order {
   id: number;
   number: string;
   dateCreated: string;
   status: OrderStatus;
-  currency: "EUR";
+  currency: string;
   total: string;
   customer: OrderCustomer;
   paymentStatus: PaymentStatus;

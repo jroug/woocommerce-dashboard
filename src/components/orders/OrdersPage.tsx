@@ -18,9 +18,13 @@ const tabs: Array<{ label: string; value: OrderStatus | "all" }> = [
   { label: "Completed", value: "completed" },
   { label: "Cancelled", value: "cancelled" },
   { label: "Refunded", value: "refunded" },
+  { label: "Failed", value: "failed" },
 ];
 
 export function OrdersPage({ initialOrders }: { initialOrders: Order[] }) {
+  const extraStatuses = [...new Set(initialOrders.map((order) => order.status))].filter(
+    (status) => !tabs.some((tab) => tab.value === status),
+  );
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<OrderStatus | "all">("all");
   const [date, setDate] = useState<OrderDateFilter>("all");
@@ -31,8 +35,9 @@ export function OrdersPage({ initialOrders }: { initialOrders: Order[] }) {
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    // Anchor relative filters to the mock dataset so results do not age with the real clock.
-    const referenceDate = new Date("2026-08-29T23:59:59Z");
+    const referenceDate = new Date();
+    const startOfToday = new Date(referenceDate);
+    startOfToday.setHours(0, 0, 0, 0);
     return initialOrders
       .filter((order) => {
         const searchable =
@@ -41,9 +46,9 @@ export function OrdersPage({ initialOrders }: { initialOrders: Order[] }) {
           (referenceDate.getTime() - new Date(order.dateCreated).getTime()) / 86_400_000;
         const matchesDate =
           date === "all" ||
-          (date === "today" && ageInDays < 1) ||
-          (date === "7d" && ageInDays <= 7) ||
-          (date === "30d" && ageInDays <= 30);
+          (date === "today" && ageInDays >= 0 && new Date(order.dateCreated) >= startOfToday) ||
+          (date === "7d" && ageInDays >= 0 && ageInDays <= 7) ||
+          (date === "30d" && ageInDays >= 0 && ageInDays <= 30);
         return (
           (!normalizedQuery || searchable.includes(normalizedQuery)) &&
           (status === "all" || order.status === status) &&
@@ -143,6 +148,7 @@ export function OrdersPage({ initialOrders }: { initialOrders: Order[] }) {
           </div>
         </nav>
         <OrdersToolbar
+          extraStatuses={extraStatuses}
           query={query}
           status={status}
           date={date}

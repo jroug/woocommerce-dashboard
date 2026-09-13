@@ -5,8 +5,12 @@ import type { Order } from "@/types/order";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 
-const currency = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
-const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const date = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 function SelectAllCheckbox({
   checked,
@@ -70,7 +74,8 @@ export function OrdersTable({
         </thead>
         <tbody className="divide-y">
           {orders.map((order) => {
-            const customerName = `${order.customer.firstName} ${order.customer.lastName}`;
+            const customerName =
+              `${order.customer.firstName} ${order.customer.lastName}`.trim() || "Guest";
             return (
               <tr
                 key={order.id}
@@ -116,7 +121,10 @@ export function OrdersTable({
                   {order.itemsCount} {order.itemsCount === 1 ? "item" : "items"}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold tabular-nums text-[var(--color-text)]">
-                  {currency.format(Number(order.total))}
+                  {new Intl.NumberFormat("en-IE", {
+                    style: "currency",
+                    currency: order.currency,
+                  }).format(Number(order.total))}
                 </td>
               </tr>
             );

@@ -21,7 +21,7 @@ export function OrderMetadata({ order }: { order: OrderDetails }) {
         <dl className="mt-4 space-y-1.5 border-t pt-3 text-[12px]">
           <div className="flex justify-between gap-3">
             <dt className="text-[var(--color-text-muted)]">Source</dt>
-            <dd>Online store</dd>
+            <dd>{order.source ?? "Online store"}</dd>
           </div>
           <div className="flex justify-between gap-3">
             <dt className="text-[var(--color-text-muted)]">Currency</dt>

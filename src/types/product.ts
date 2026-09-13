@@ -1,4 +1,4 @@
-export type ProductStatus = "active" | "draft" | "archived";
+export type ProductStatus = "publish" | "draft" | "pending" | "private" | "future" | "trash";
 export type ProductType = "simple" | "variable";
 export type StockStatus = "instock" | "outofstock" | "onbackorder";
 export type InventoryFilter = "all" | "in-stock" | "low-stock" | "out-of-stock";
@@ -47,7 +47,7 @@ export interface ProductSeo {
   description: string;
 }
 
-/** Product fields intentionally align with a future WooCommerce response mapper. */
+/** Normalized product fields used by the dashboard. */
 export interface Product {
   id: number;
   name: string;
@@ -58,15 +58,20 @@ export interface Product {
   price: string;
   regularPrice: string;
   salePrice: string;
-  currency: "EUR";
+  currency: string;
   stockQuantity: number | null;
   stockStatus: StockStatus;
   manageStock: boolean;
   lowStockThreshold: number;
   category: ProductCategory;
+  categories?: ProductCategory[];
   image: ProductImage;
   totalSales: number;
   dateCreated: string;
+  datePublished?: string | null;
+  dateModified?: string | null;
+  tags?: string[];
+  brands?: string[];
 }
 
 export interface ProductDetails extends Product {

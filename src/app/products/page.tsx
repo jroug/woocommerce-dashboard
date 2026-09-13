@@ -1,10 +1,14 @@
 import { AppShell } from "@/components/dashboard/AppShell";
 import { ProductsPage } from "@/components/products/ProductsPage";
-import { productCategories, products } from "@/data/products";
-export default function ProductsRoute() {
+import { getWooCommerceProducts } from "@/lib/woocommerce";
+
+export const dynamic = "force-dynamic";
+
+export default async function ProductsRoute() {
+  const { products, categories, currency } = await getWooCommerceProducts();
   return (
     <AppShell activeSection="products" mobileTitle="Products">
-      <ProductsPage initialProducts={products} categories={productCategories} />
+      <ProductsPage initialProducts={products} categories={categories} currency={currency} />
     </AppShell>
   );
 }

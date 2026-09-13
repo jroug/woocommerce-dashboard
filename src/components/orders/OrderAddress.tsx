@@ -4,22 +4,26 @@ export function OrderAddress({
   title,
   address,
   sameAsShipping = false,
+  readOnly = false,
 }: {
   title: string;
   address: Address;
   sameAsShipping?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <section className="admin-card">
       <header className="flex items-center justify-between border-b px-4 py-3.5">
         <h2 className="text-[15px] font-semibold">{title}</h2>
-        <button
-          type="button"
-          className="flex items-center gap-1 text-[12px] font-medium hover:underline"
-        >
-          <Pencil size={12} />
-          Edit
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            className="flex items-center gap-1 text-[12px] font-medium hover:underline"
+          >
+            <Pencil size={12} />
+            Edit
+          </button>
+        )}
       </header>
       <address className="p-4 text-[13px] not-italic leading-5 text-[var(--color-text-secondary)]">
         <p className="font-medium text-[var(--color-text)]">

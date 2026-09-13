@@ -1,19 +1,16 @@
 import { AppShell } from "@/components/dashboard/AppShell";
 import { OrderDetailsPage } from "@/components/orders/OrderDetailsPage";
 import { OrderNotFound } from "@/components/orders/OrderNotFound";
-import { getOrderDetails } from "@/data/orderDetails";
-import { orders } from "@/data/orders";
+import { getWooCommerceOrderDetails } from "@/lib/woocommerce";
+
+export const dynamic = "force-dynamic";
 
 export default async function OrderDetailsRoute({ params }: { params: Promise<{ id: string }> }) {
-  // Next.js supplies route params asynchronously, even for this local fixture lookup.
   const { id } = await params;
-  const baseOrder = orders.find((order) => String(order.id) === id);
+  const order = await getWooCommerceOrderDetails(id);
   return (
-    <AppShell
-      activeSection="orders"
-      mobileTitle={baseOrder ? `Order #${baseOrder.number}` : "Order"}
-    >
-      {baseOrder ? <OrderDetailsPage order={getOrderDetails(baseOrder)} /> : <OrderNotFound />}
+    <AppShell activeSection="orders" mobileTitle={order ? `Order #${order.number}` : "Order"}>
+      {order ? <OrderDetailsPage order={order} /> : <OrderNotFound />}
     </AppShell>
   );
 }

@@ -4,7 +4,7 @@
 
 A basic e-commerce administration dashboard built with Next.js, presented under the Northstar Commerce demo brand. This portfolio project focuses on dashboard layout, navigation, reusable components, and everyday store-management interactions.
 
-**The current application uses mock data and is not connected to a live e-commerce backend.** It demonstrates the frontend experience and architecture, rather than a production administration system.
+**The products list, orders list, and order detail pages read from WooCommerce.** Other pages, including the product detail editor, still use mock data. Product writes are not connected.
 
 ## Concept
 
@@ -116,3 +116,13 @@ Possible next steps include:
 - Persistent customer management, notes, and tags.
 - Expanded analytics backed by consistent store and reporting data.
 - Completion of placeholder actions and navigation controls.
+
+## WooCommerce products connection
+
+Set `WOOCOMMERCE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, and `WOOCOMMERCE_CONSUMER_SECRET` in `.env.local`. Use the store base URL (including any WordPress subdirectory) and keys with read access to products and store settings. Credentials stay on the server.
+
+The products list loads every REST API page, uses the store currency, and filters locally across the full catalog. Its columns show name, SKU, stock, regular/sale price, all categories, tags, brands, WooCommerce status, and publication date. Empty values display a dash. Publication dates use the published product's `date_created_gmt` in UTC; drafts show their last modified date from `date_modified_gmt` instead. Brands require the WooCommerce API's `brands` field.
+
+For this local MAMP installation, `.env.local` also sets `WOOCOMMERCE_LOCAL_CERT_PATH` to the MAMP localhost certificate. The connection trusts that exact certificate only for HTTPS localhost, without globally disabling TLS verification. Remove this setting when switching to a remote store with a publicly trusted certificate. Restart the dev server after changing environment settings.
+
+The orders list fetches all WooCommerce order pages, including guest billing information, line-item quantities, order status, payment date-derived payment status, totals, and each order’s currency. Date filters use the current date. Order detail pages load the selected order and all its notes from WooCommerce. They show real line items, billing/shipping addresses, payment information, fees, refunds, and recorded creation/payment/completion dates. Missing tracking and customer lifetime metrics are not fabricated. Order actions remain unimplemented; the live detail view is read-only.

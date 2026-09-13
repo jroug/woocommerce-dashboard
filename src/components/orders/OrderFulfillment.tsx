@@ -6,10 +6,16 @@ const dateTime = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   hour: "numeric",
   minute: "2-digit",
+  timeZone: "UTC",
 });
-const labels = { unfulfilled: "Unfulfilled", fulfilled: "Fulfilled", shipped: "Shipped" } as const;
+const labels = {
+  unfulfilled: "Unfulfilled",
+  fulfilled: "Fulfilled",
+  shipped: "Shipped",
+  unknown: "Not available",
+} as const;
 export function OrderFulfillment({ order }: { order: OrderDetails }) {
-  const complete = order.fulfillmentStatus !== "unfulfilled";
+  const complete = ["fulfilled", "shipped"].includes(order.fulfillmentStatus);
   return (
     <section className="admin-card">
       <header className="flex items-center justify-between border-b px-4 py-3.5 sm:px-5">
@@ -30,47 +36,49 @@ export function OrderFulfillment({ order }: { order: OrderDetails }) {
         </div>
         <div>
           <p className="text-[12px] text-[var(--color-text-secondary)]">Carrier</p>
-          <p>{order.carrier ?? "Not assigned"}</p>
+          <p>{order.carrier ?? "Not provided"}</p>
         </div>
         <div>
           <p className="text-[12px] text-[var(--color-text-secondary)]">Tracking number</p>
-          <p className="font-mono text-[12px]">{order.trackingNumber ?? "No tracking added"}</p>
+          <p className="font-mono text-[12px]">{order.trackingNumber ?? "Not provided"}</p>
         </div>
         <div>
           <p className="text-[12px] text-[var(--color-text-secondary)]">Shipped</p>
           <p>
-            {order.dateFulfilled ? dateTime.format(new Date(order.dateFulfilled)) : "Not shipped"}
+            {order.dateFulfilled ? dateTime.format(new Date(order.dateFulfilled)) : "Not provided"}
           </p>
         </div>
       </div>
-      <div className="flex flex-wrap justify-end gap-2 border-t px-4 py-3 sm:px-5">
-        {complete ? (
-          <button
-            type="button"
-            className="admin-control flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium"
-          >
-            <Pencil size={13} />
-            Edit tracking
-          </button>
-        ) : (
-          <>
+      {!order.readOnly && (
+        <div className="flex flex-wrap justify-end gap-2 border-t px-4 py-3 sm:px-5">
+          {complete ? (
             <button
               type="button"
               className="admin-control flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium"
             >
-              <Plus size={13} />
-              Add tracking
+              <Pencil size={13} />
+              Edit tracking
             </button>
-            <button
-              type="button"
-              className="flex h-8 items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-action)] px-2.5 text-[12px] font-semibold text-white"
-            >
-              <PackageCheck size={13} />
-              Mark as fulfilled
-            </button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="admin-control flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium"
+              >
+                <Plus size={13} />
+                Add tracking
+              </button>
+              <button
+                type="button"
+                className="flex h-8 items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-action)] px-2.5 text-[12px] font-semibold text-white"
+              >
+                <PackageCheck size={13} />
+                Mark as fulfilled
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
 }

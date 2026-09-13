@@ -1,15 +1,16 @@
 import { CreditCard, RotateCcw } from "lucide-react";
 import type { OrderDetails } from "@/types/order";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
-const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
 const dateTime = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
   year: "numeric",
   hour: "numeric",
   minute: "2-digit",
+  timeZone: "UTC",
 });
 export function OrderPayment({ order }: { order: OrderDetails }) {
+  const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: order.currency });
   return (
     <section className="admin-card">
       <header className="flex items-center justify-between border-b px-4 py-3.5 sm:px-5">
@@ -37,15 +38,17 @@ export function OrderPayment({ order }: { order: OrderDetails }) {
           <p>{order.datePaid ? dateTime.format(new Date(order.datePaid)) : "Not paid"}</p>
         </div>
       </div>
-      <div className="flex justify-end gap-2 border-t px-4 py-3 sm:px-5">
-        <button
-          type="button"
-          className="admin-control flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium"
-        >
-          <RotateCcw size={13} />
-          {order.paymentStatus === "paid" ? "Refund" : "Mark as paid"}
-        </button>
-      </div>
+      {!order.readOnly && (
+        <div className="flex justify-end gap-2 border-t px-4 py-3 sm:px-5">
+          <button
+            type="button"
+            className="admin-control flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium"
+          >
+            <RotateCcw size={13} />
+            {order.paymentStatus === "paid" ? "Refund" : "Mark as paid"}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

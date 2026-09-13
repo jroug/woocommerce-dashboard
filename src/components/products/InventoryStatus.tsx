@@ -19,11 +19,13 @@ const styles: Record<InventoryState, string> = {
 export function InventoryStatus({ product }: { product: Product }) {
   const state = getInventoryState(product);
   const text =
-    state === "out-of-stock"
-      ? product.stockStatus === "onbackorder"
-        ? "On backorder"
-        : "Out of stock"
-      : `${product.stockQuantity ?? "—"} in stock`;
+    product.stockStatus === "onbackorder"
+      ? "On backorder"
+      : state === "out-of-stock"
+        ? "Out of stock"
+        : product.manageStock && product.stockQuantity !== null
+          ? `${product.stockQuantity} in stock`
+          : "In stock";
   return (
     <span
       className={`inline-flex items-center gap-1.5 whitespace-nowrap text-[12px] ${styles[state]}`}

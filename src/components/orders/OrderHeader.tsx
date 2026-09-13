@@ -10,6 +10,7 @@ const dateTime = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   hour: "numeric",
   minute: "2-digit",
+  timeZone: "UTC",
 });
 export function OrderHeader({ order }: { order: OrderDetails }) {
   return (
@@ -23,13 +24,15 @@ export function OrderHeader({ order }: { order: OrderDetails }) {
       </Link>
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[22px] font-semibold leading-7 tracking-[-.02em]">
-              #{order.number}
-            </h1>
-            <OrderStatusBadge status={order.status} />
-            <PaymentStatusBadge status={order.paymentStatus} />
-          </div>
+          {!order.readOnly && (
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-[22px] font-semibold leading-7 tracking-[-.02em]">
+                #{order.number}
+              </h1>
+              <OrderStatusBadge status={order.status} />
+              <PaymentStatusBadge status={order.paymentStatus} />
+            </div>
+          )}
           <p className="mt-0.5 text-[12px] text-[var(--color-text-secondary)]">
             Created {dateTime.format(new Date(order.dateCreated))}
           </p>

@@ -15,7 +15,7 @@ export function OrderDetailsPage({ order }: { order: OrderDetails }) {
       <OrderHeader order={order} />
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-3">
-          <OrderItems items={order.lineItems} />
+          <OrderItems items={order.lineItems} currency={order.currency} />
           <OrderTotals order={order} />
           <OrderPayment order={order} />
           <OrderFulfillment order={order} />
@@ -23,10 +23,15 @@ export function OrderDetailsPage({ order }: { order: OrderDetails }) {
         </div>
         <aside className="space-y-3">
           <OrderCustomer order={order} />
-          <OrderAddress title="Shipping address" address={order.shipping} />
+          <OrderAddress
+            title="Shipping address"
+            address={order.shipping}
+            readOnly={order.readOnly}
+          />
           <OrderAddress
             title="Billing address"
             address={order.billing}
+            readOnly={order.readOnly}
             sameAsShipping={order.billingSameAsShipping}
           />
           <OrderMetadata order={order} />

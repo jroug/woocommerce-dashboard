@@ -21,13 +21,16 @@ export function ProductStatusCard({
             onChange={(e) => onChange({ status: e.target.value as ProductStatus })}
             className="admin-control h-8 w-full px-2 text-[13px] outline-none"
           >
-            <option value="active">Active</option>
+            <option value="publish">Published</option>
             <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
+            <option value="pending">Pending review</option>
+            <option value="private">Private</option>
+            <option value="future">Scheduled</option>
+            <option value="trash">Trash</option>
           </select>
         </label>
         <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
-          Active products are visible in enabled sales channels.
+          Published products are visible in your store.
         </p>
       </div>
     </section>

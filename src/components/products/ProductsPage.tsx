@@ -17,12 +17,15 @@ import { EmptyProductsState, NoProductResults } from "./ProductsStates";
 import { ProductsTable } from "./ProductsTable";
 import { ProductsToolbar } from "./ProductsToolbar";
 
-const PAGE_SIZE = 7;
-type ProductView = "all" | "active" | "draft" | "out-of-stock" | "low-stock";
+const PAGE_SIZE = 15;
+type ProductView = "all" | ProductStatus | "out-of-stock" | "low-stock";
 const tabs: Array<{ label: string; value: ProductView }> = [
   { label: "All", value: "all" },
-  { label: "Active", value: "active" },
+  { label: "Published", value: "publish" },
   { label: "Draft", value: "draft" },
+  { label: "Pending review", value: "pending" },
+  { label: "Private", value: "private" },
+  { label: "Scheduled", value: "future" },
   { label: "Out of stock", value: "out-of-stock" },
   { label: "Low stock", value: "low-stock" },
 ];
@@ -30,10 +33,14 @@ const tabs: Array<{ label: string; value: ProductView }> = [
 export function ProductsPage({
   initialProducts,
   categories,
+  currency = "EUR",
 }: {
   initialProducts: Product[];
   categories: ProductCategory[];
+  currency?: string;
 }) {
+  // console.log(initialProducts);
+
   const [view, setView] = useState<ProductView>("all");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<ProductStatus | "all">("all");
@@ -49,11 +56,7 @@ export function ProductsPage({
       .filter((product) => {
         const inventoryState = getInventoryState(product);
         const amount = Number(product.price);
-        const viewMatches =
-          view === "all" ||
-          (view === "active" && product.status === "active") ||
-          (view === "draft" && product.status === "draft") ||
-          view === inventoryState;
+        const viewMatches = view === "all" || view === product.status || view === inventoryState;
         const priceMatches =
           price === "all" ||
           (price === "under-50" && amount < 50) ||
@@ -63,7 +66,8 @@ export function ProductsPage({
           viewMatches &&
           (!normalized || `${product.name} ${product.sku}`.toLowerCase().includes(normalized)) &&
           (status === "all" || product.status === status) &&
-          (category === "all" || product.category.slug === category) &&
+          (category === "all" ||
+            (product.categories ?? [product.category]).some((item) => item.slug === category)) &&
           (inventory === "all" || inventoryState === inventory) &&
           priceMatches
         );
@@ -185,6 +189,7 @@ export function ProductsPage({
           price={price}
           sort={sort}
           categories={categories}
+          currency={currency}
           hasFilters={hasFilters}
           onQueryChange={updateFilter(setQuery)}
           onStatusChange={updateFilter(setStatus)}

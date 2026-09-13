@@ -2,6 +2,7 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 import type { OrderDateFilter, OrderSort, OrderStatus, PaymentStatus } from "@/types/order";
 
 interface OrdersToolbarProps {
+  extraStatuses: OrderStatus[];
   query: string;
   status: OrderStatus | "all";
   date: OrderDateFilter;
@@ -50,6 +51,11 @@ export function OrdersToolbar(props: OrdersToolbarProps) {
             <option value="cancelled">Cancelled</option>
             <option value="refunded">Refunded</option>
             <option value="failed">Failed</option>
+            {props.extraStatuses.map((status) => (
+              <option key={status} value={status}>
+                {status.replaceAll("-", " ")}
+              </option>
+            ))}
           </select>
           <select
             aria-label="Date filter"
