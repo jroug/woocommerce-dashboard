@@ -12,7 +12,6 @@ import type {
   CustomerView,
 } from "@/types/customer";
 import { CustomerMetrics } from "./CustomerMetrics";
-import { CustomersBulkActions } from "./CustomersBulkActions";
 import { CustomersPagination } from "./CustomersPagination";
 import { EmptyCustomersState, NoCustomerResults } from "./CustomersStates";
 import { CustomersTable } from "./CustomersTable";
@@ -26,17 +25,24 @@ const tabs: Array<{ label: string; value: CustomerView }> = [
   { label: "High value", value: "high-value" },
   { label: "No orders", value: "no-orders" },
 ];
-// Filter segments can overlap; "new" uses the fixed demo month, not the badge rules.
-const isType = (customer: Customer, type: CustomerTypeFilter | CustomerView) =>
+// Segments can overlap; new customers joined during the last 30 days.
+const isType = (customer: Customer, type: CustomerTypeFilter | CustomerView, now: Date) =>
   type === "all" ||
-  (type === "new" && new Date(customer.dateCreated) >= new Date("2026-08-01")) ||
+  (type === "new" &&
+    new Date(customer.dateCreated) <= now &&
+    new Date(customer.dateCreated).getTime() >= now.getTime() - 30 * 86_400_000) ||
   (type === "returning" && customer.ordersCount > 1) ||
   (type === "high-value" && Number(customer.totalSpent) >= 500) ||
   (type === "no-orders" && customer.ordersCount === 0);
 
-export function CustomersPage({ initialCustomers }: { initialCustomers: Customer[] }) {
-  // Bulk edits affect this mounted view only; the source fixtures are not persisted.
-  const [records, setRecords] = useState(initialCustomers);
+export function CustomersPage({
+  initialCustomers,
+  currency,
+}: {
+  initialCustomers: Customer[];
+  currency: string;
+}) {
+  const records = initialCustomers;
   const [view, setView] = useState<CustomerView>("all");
   const [query, setQuery] = useState("");
   const [type, setType] = useState<CustomerTypeFilter>("all");
@@ -44,15 +50,16 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
   const [spent, setSpent] = useState<CustomerSpentFilter>("all");
   const [location, setLocation] = useState("all");
   const [joined, setJoined] = useState<CustomerJoinedFilter>("all");
-  const [sort, setSort] = useState<CustomerSort>("newest");
+  const [sort, setSort] = useState<CustomerSort>("active-newest");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const locations = useMemo(
-    () => [...new Set(records.map((item) => item.billing.country))].sort(),
+    () => [...new Set(records.map((item) => item.billing.country).filter(Boolean))].sort(),
     [records],
   );
   const filteredCustomers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
+    const now = new Date();
     return records
       .filter((customer) => {
         const amount = Number(customer.totalSpent);
@@ -69,17 +76,23 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
           (spent === "100-500" && amount >= 100 && amount <= 500) ||
           (spent === "over-500" && amount > 500);
         const joinedAt = new Date(customer.dateCreated);
-        // Relative ranges are anchored to the August 2026 demo snapshot.
+        // Relative ranges use the current date.
         const joinedMatch =
           joined === "all" ||
-          (joined === "7-days" && joinedAt >= new Date("2026-08-23")) ||
-          (joined === "30-days" && joinedAt >= new Date("2026-07-31")) ||
-          (joined === "this-year" && joinedAt >= new Date("2026-01-01"));
+          (joined === "7-days" &&
+            joinedAt <= now &&
+            joinedAt.getTime() >= now.getTime() - 7 * 86_400_000) ||
+          (joined === "30-days" &&
+            joinedAt <= now &&
+            joinedAt.getTime() >= now.getTime() - 30 * 86_400_000) ||
+          (joined === "this-year" &&
+            joinedAt <= now &&
+            joinedAt.getFullYear() === now.getFullYear());
         return (
-          isType(customer, view) &&
-          isType(customer, type) &&
+          isType(customer, view, now) &&
+          isType(customer, type, now) &&
           (!normalized ||
-            `${customer.firstName} ${customer.lastName} ${customer.email} ${customer.phone}`
+            `${customer.firstName} ${customer.lastName} ${customer.username ?? ""} ${customer.email} ${customer.phone}`
               .toLowerCase()
               .includes(normalized)) &&
           orderMatch &&
@@ -96,6 +109,13 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
         if (sort === "orders-high") return b.ordersCount - a.ordersCount;
         if (sort === "spent-high") return Number(b.totalSpent) - Number(a.totalSpent);
         if (sort === "spent-low") return Number(a.totalSpent) - Number(b.totalSpent);
+        if (sort === "active-newest" || sort === "active-oldest") {
+          const aDate = a.lastActiveDate ? new Date(a.lastActiveDate).getTime() : null;
+          const bDate = b.lastActiveDate ? new Date(b.lastActiveDate).getTime() : null;
+          if (aDate === null) return bDate === null ? 0 : 1;
+          if (bDate === null) return -1;
+          return sort === "active-newest" ? bDate - aDate : aDate - bDate;
+        }
         const difference = new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
         return sort === "newest" ? difference : -difference;
       });
@@ -115,7 +135,7 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
     spent !== "all" ||
     location !== "all" ||
     joined !== "all" ||
-    sort !== "newest",
+    sort !== "active-newest",
   );
   // A narrower result set may no longer contain the current page.
   const updateFilter =
@@ -132,7 +152,7 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
     setSpent("all");
     setLocation("all");
     setJoined("all");
-    setSort("newest");
+    setSort("active-newest");
     setPage(1);
   };
   const selectCustomer = (id: number) =>
@@ -150,20 +170,6 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
       visibleCustomers.forEach((item) => (allSelected ? next.delete(item.id) : next.add(item.id)));
       return next;
     });
-  // The demo bulk action adds VIP once; removal clears every tag on selected records.
-  const updateSelected = (action: "add" | "remove") =>
-    setRecords((current) =>
-      current.map((item) =>
-        selected.has(item.id)
-          ? { ...item, tags: action === "add" ? [...new Set([...item.tags, "vip"])] : [] }
-          : item,
-      ),
-    );
-  const deleteSelected = () => {
-    setRecords((current) => current.filter((item) => !selected.has(item.id)));
-    setSelected(new Set());
-    setPage(1);
-  };
   return (
     <main className="mx-auto max-w-[1240px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -197,7 +203,7 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
           </Link>
         </div>
       </div>
-      <CustomerMetrics customers={records} />
+      <CustomerMetrics customers={filteredCustomers} currency={currency} />
       <section className="admin-card overflow-hidden" aria-label="Customers list">
         <nav aria-label="Customer views" className="overflow-x-auto border-b px-2">
           <div className="flex min-w-max gap-0.5">
@@ -218,6 +224,7 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
           </div>
         </nav>
         <CustomersToolbar
+          currency={currency}
           query={query}
           type={type}
           orders={orders}
@@ -236,14 +243,6 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
           onSortChange={updateFilter(setSort)}
           onClear={clearFilters}
         />
-        {selected.size > 0 && (
-          <CustomersBulkActions
-            count={selected.size}
-            onAddTag={() => updateSelected("add")}
-            onRemoveTags={() => updateSelected("remove")}
-            onDelete={deleteSelected}
-          />
-        )}{" "}
         {records.length === 0 ? (
           <EmptyCustomersState />
         ) : filteredCustomers.length === 0 ? (
@@ -251,6 +250,8 @@ export function CustomersPage({ initialCustomers }: { initialCustomers: Customer
         ) : (
           <>
             <CustomersTable
+              sort={sort}
+              onSortChange={updateFilter(setSort)}
               customers={visibleCustomers}
               selected={selected}
               onSelect={selectCustomer}

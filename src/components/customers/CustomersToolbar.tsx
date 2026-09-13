@@ -8,6 +8,7 @@ import type {
 } from "@/types/customer";
 const selectClass = "admin-control h-8 cursor-pointer px-2 text-[12px] font-medium outline-none";
 interface Props {
+  currency: string;
   query: string;
   type: CustomerTypeFilter;
   orders: CustomerOrdersFilter;
@@ -27,12 +28,18 @@ interface Props {
   onClear: () => void;
 }
 export function CustomersToolbar(props: Props) {
+  const money = (value: number) =>
+    new Intl.NumberFormat("en-IE", {
+      style: "currency",
+      currency: props.currency,
+      maximumFractionDigits: 0,
+    }).format(value);
   return (
     <div className="border-b bg-[var(--color-surface-subdued)] p-3">
       <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
         <label className="admin-control flex h-8 min-w-0 flex-1 items-center gap-2 px-2.5 xl:max-w-[300px]">
           <Search size={15} className="shrink-0 text-[var(--color-text-muted)]" />
-          <span className="sr-only">Search customers</span>
+          <span className="sr-only">Search names, usernames, or email</span>
           <input
             value={props.query}
             onChange={(e) => props.onQueryChange(e.target.value)}
@@ -76,10 +83,12 @@ export function CustomersToolbar(props: Props) {
             className={selectClass}
           >
             <option value="all">Any spend</option>
-            <option value="zero">€0</option>
-            <option value="under-100">Under €100</option>
-            <option value="100-500">€100–€500</option>
-            <option value="over-500">Over €500</option>
+            <option value="zero">{money(0)}</option>
+            <option value="under-100">Under {money(100)}</option>
+            <option value="100-500">
+              {money(100)}–{money(500)}
+            </option>
+            <option value="over-500">Over {money(500)}</option>
           </select>
           <select
             aria-label="Location"
@@ -111,6 +120,8 @@ export function CustomersToolbar(props: Props) {
             onChange={(e) => props.onSortChange(e.target.value as CustomerSort)}
             className={selectClass}
           >
+            <option value="active-newest">Last active: newest</option>
+            <option value="active-oldest">Last active: oldest</option>
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
             <option value="orders-high">Most orders</option>

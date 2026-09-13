@@ -2,8 +2,12 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { Order } from "@/types/order";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
-const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
-const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const date = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 export function CustomerOrders({ orders }: { orders: Order[] }) {
   return (
     <section className="admin-card overflow-hidden">
@@ -11,7 +15,7 @@ export function CustomerOrders({ orders }: { orders: Order[] }) {
         <div>
           <h2 className="text-[15px] font-semibold">Order history</h2>
           <p className="text-[11px] text-[var(--color-text-muted)]">
-            Recent orders from this customer
+            All orders from this customer
           </p>
         </div>
         <Link
@@ -35,7 +39,7 @@ export function CustomerOrders({ orders }: { orders: Order[] }) {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {orders.slice(0, 8).map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-[var(--color-surface-subdued)]">
                   <td className="px-4 py-3">
                     <Link
@@ -53,7 +57,10 @@ export function CustomerOrders({ orders }: { orders: Order[] }) {
                   </td>
                   <td className="px-3 py-3 text-right">{order.itemsCount}</td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums">
-                    {money.format(Number(order.total))}
+                    {new Intl.NumberFormat("en-IE", {
+                      style: "currency",
+                      currency: order.currency,
+                    }).format(Number(order.total))}
                   </td>
                 </tr>
               ))}

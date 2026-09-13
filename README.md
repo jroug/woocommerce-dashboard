@@ -4,7 +4,7 @@
 
 A basic e-commerce administration dashboard built with Next.js, presented under the Northstar Commerce demo brand. This portfolio project focuses on dashboard layout, navigation, reusable components, and everyday store-management interactions.
 
-**The products list, orders list, and order detail pages read from WooCommerce.** Other pages, including the product detail editor, still use mock data. Product writes are not connected.
+**The products, orders, and customers lists, plus order detail pages, read from WooCommerce.** Other pages, including the product detail editor, still use mock data. Product writes are not connected.
 
 ## Concept
 
@@ -126,3 +126,5 @@ The products list loads every REST API page, uses the store currency, and filter
 For this local MAMP installation, `.env.local` also sets `WOOCOMMERCE_LOCAL_CERT_PATH` to the MAMP localhost certificate. The connection trusts that exact certificate only for HTTPS localhost, without globally disabling TLS verification. Remove this setting when switching to a remote store with a publicly trusted certificate. Restart the dev server after changing environment settings.
 
 The orders list fetches all WooCommerce order pages, including guest billing information, line-item quantities, order status, payment date-derived payment status, totals, and each order’s currency. Date filters use the current date. Order detail pages load the selected order and all its notes from WooCommerce. They show real line items, billing/shipping addresses, payment information, fees, refunds, and recorded creation/payment/completion dates. Missing tracking and customer lifetime metrics are not fabricated. Order actions remain unimplemented; the live detail view is read-only.
+
+The customers list loads every page of WooCommerce’s `wc-analytics/reports/customers` report, including guest customers when present in analytics. Names, usernames, last activity, registration dates, order counts, lifetime spend, AOV, and location fields come directly from that report, respecting WooCommerce’s analytics status rules. Dates are displayed in the store’s local calendar dates. Summary cards reflect all filtered rows: customer count, mean order count, mean lifetime spend, and mean customer AOV (excluding null AOVs, as WooCommerce does). Customer detail pages load WooCommerce profiles and full order history, while retaining the same analytics metrics as the list. Guest profiles use the latest matching guest order for contact/address details. Checkout notes and recorded activity replace demo content. Customer editing and bulk actions are not connected.

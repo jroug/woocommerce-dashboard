@@ -1,16 +1,12 @@
 import type { CustomerDetails } from "@/types/customer";
-const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const date = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 export function CustomerBehavior({ customer }: { customer: CustomerDetails }) {
-  // Measure recency against the fixed demo date to keep fixture-based values stable.
-  const days = customer.lastOrderDate
-    ? Math.max(
-        0,
-        Math.floor(
-          (new Date("2026-08-30").getTime() - new Date(customer.lastOrderDate).getTime()) /
-            86_400_000,
-        ),
-      )
-    : null;
+  const days = customer.daysSinceLastOrder ?? null;
   const values = [
     {
       label: "First order",
@@ -18,7 +14,10 @@ export function CustomerBehavior({ customer }: { customer: CustomerDetails }) {
     },
     { label: "Days since last order", value: days === null ? "—" : days.toString() },
     { label: "Refunds", value: customer.refundsCount.toString() },
-    { label: "Favorite category", value: customer.favoriteCategory },
+    {
+      label: "Last active",
+      value: customer.lastActiveDate ? date.format(new Date(customer.lastActiveDate)) : "—",
+    },
   ];
   return (
     <section className="admin-card">

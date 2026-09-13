@@ -4,9 +4,20 @@ export type CustomerOrdersFilter = "all" | "none" | "one" | "repeat" | "five-plu
 export type CustomerSpentFilter = "all" | "zero" | "under-100" | "100-500" | "over-500";
 export type CustomerJoinedFilter = "all" | "7-days" | "30-days" | "this-year";
 export type CustomerSort =
-  "newest" | "oldest" | "orders-high" | "spent-high" | "spent-low" | "name-asc" | "name-desc";
+  | "active-newest"
+  | "active-oldest"
+  | "newest"
+  | "oldest"
+  | "orders-high"
+  | "spent-high"
+  | "spent-low"
+  | "name-asc"
+  | "name-desc";
 
 export interface CustomerAddress {
+  firstName?: string;
+  lastName?: string;
+  company?: string;
   address1: string;
   address2: string;
   city: string;
@@ -29,9 +40,15 @@ export interface CustomerTimelineEvent {
   date: string;
 }
 
-/** Customer fields are presentation-safe and map cleanly to a future WooCommerce adapter. */
+/** Normalized customer data used by the dashboard. */
 export interface Customer {
   id: number;
+  userId?: number | null;
+  username?: string;
+  lastActiveDate?: string | null;
+  dateRegisteredLocal?: string | null;
+  lastActiveDateLocal?: string | null;
+  hasAverageOrderValue?: boolean;
   firstName: string;
   lastName: string;
   email: string;
@@ -41,14 +58,17 @@ export interface Customer {
   billing: CustomerAddress;
   shipping: CustomerAddress;
   ordersCount: number;
+  paidOrdersCount?: number;
   totalSpent: string;
   averageOrderValue: string;
   lastOrderDate: string | null;
   tags: string[];
-  currency: "EUR";
+  currency: string;
 }
 
 export interface CustomerDetails extends Customer {
+  readOnly?: boolean;
+  daysSinceLastOrder?: number | null;
   firstOrderDate: string | null;
   refundsCount: number;
   favoriteCategory: string;

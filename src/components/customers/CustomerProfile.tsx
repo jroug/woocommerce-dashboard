@@ -1,7 +1,12 @@
 import type { CustomerDetails } from "@/types/customer";
 import { CustomerBadge } from "./CustomerBadge";
 import { TextInput } from "@/components/products/ProductFormField";
-const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const date = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 export function CustomerProfile({
   customer,
   editing,
@@ -85,12 +90,22 @@ export function CustomerProfile({
             </dd>
           </div>
           <div>
+            <dt className="text-[11px] text-[var(--color-text-muted)]">Username</dt>
+            <dd className="mt-0.5 font-medium">{customer.username || "Guest"}</dd>
+          </div>
+          <div>
             <dt className="text-[11px] text-[var(--color-text-muted)]">Customer ID</dt>
-            <dd className="mt-0.5 font-medium">#{customer.id}</dd>
+            <dd className="mt-0.5 font-medium">#{customer.userId || customer.id}</dd>
           </div>
           <div>
             <dt className="text-[11px] text-[var(--color-text-muted)]">Date joined</dt>
-            <dd className="mt-0.5 font-medium">{date.format(new Date(customer.dateCreated))}</dd>
+            <dd className="mt-0.5 font-medium">
+              {customer.dateRegisteredLocal
+                ? date.format(new Date(`${customer.dateRegisteredLocal.slice(0, 10)}T12:00:00Z`))
+                : customer.dateCreated
+                  ? date.format(new Date(customer.dateCreated))
+                  : "Guest checkout"}
+            </dd>
           </div>
         </dl>
       )}

@@ -1,24 +1,32 @@
 import type { Customer } from "@/types/customer";
-const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
-export function CustomerMetrics({ customers }: { customers: Customer[] }) {
-  const totalOrders = customers.reduce((sum, item) => sum + item.ordersCount, 0);
-  const totalSpent = customers.reduce((sum, item) => sum + Number(item.totalSpent), 0);
+export function CustomerMetrics({
+  customers,
+  currency = "EUR",
+}: {
+  customers: Customer[];
+  currency?: string;
+}) {
+  const money = new Intl.NumberFormat("en-IE", { style: "currency", currency });
+  const totalOrders = customers.reduce((sum, customer) => sum + customer.ordersCount, 0);
+  const totalSpent = customers.reduce((sum, customer) => sum + Number(customer.totalSpent), 0);
+  const withAov = customers.filter((customer) => customer.hasAverageOrderValue !== false);
+  const avgAov = withAov.length
+    ? withAov.reduce((sum, customer) => sum + Number(customer.averageOrderValue), 0) /
+      withAov.length
+    : 0;
   const metrics = [
-    { label: "Total customers", value: customers.length.toLocaleString() },
+    { label: "Customers", value: customers.length.toLocaleString() },
     {
-      label: "New customers",
-      value: customers
-        .filter((item) => new Date(item.dateCreated) >= new Date("2026-08-01"))
-        .length.toString(),
+      label: "Average orders",
+      value: new Intl.NumberFormat("en-IE", { maximumFractionDigits: 2 }).format(
+        customers.length ? totalOrders / customers.length : 0,
+      ),
     },
     {
-      label: "Returning customers",
-      value: customers.filter((item) => item.ordersCount > 1).length.toString(),
+      label: "Average lifetime spend",
+      value: money.format(customers.length ? totalSpent / customers.length : 0),
     },
-    {
-      label: "Average order value",
-      value: money.format(totalOrders ? totalSpent / totalOrders : 0),
-    },
+    { label: "Average order value", value: money.format(avgAov) },
   ];
   return (
     <section

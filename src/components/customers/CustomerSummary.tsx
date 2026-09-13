@@ -1,11 +1,22 @@
 import type { CustomerDetails } from "@/types/customer";
-const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
-const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const date = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 export function CustomerSummary({ customer }: { customer: CustomerDetails }) {
+  const money = new Intl.NumberFormat("en-IE", { style: "currency", currency: customer.currency });
   const metrics = [
     { label: "Total spent", value: money.format(Number(customer.totalSpent)) },
     { label: "Orders", value: customer.ordersCount.toString() },
-    { label: "Average order value", value: money.format(Number(customer.averageOrderValue)) },
+    {
+      label: "Average order value",
+      value:
+        customer.hasAverageOrderValue === false
+          ? "—"
+          : money.format(Number(customer.averageOrderValue)),
+    },
     {
       label: "Last order",
       value: customer.lastOrderDate ? date.format(new Date(customer.lastOrderDate)) : "No orders",

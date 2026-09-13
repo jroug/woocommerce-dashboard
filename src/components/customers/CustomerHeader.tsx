@@ -10,7 +10,7 @@ export function CustomerHeader({
 }: {
   customer: Customer;
   editing: boolean;
-  onEdit: () => void;
+  onEdit?: () => void;
 }) {
   return (
     <header className="mb-4">
@@ -32,28 +32,30 @@ export function CustomerHeader({
               <CustomerBadge customer={customer} />
             </div>
             <p className="text-[12px] text-[var(--color-text-secondary)]">
-              Customer #{customer.id}
+              {customer.userId ? `Customer #${customer.userId}` : "Guest customer"}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="admin-control flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium"
-          >
-            <Pencil size={13} />
-            {editing ? "Done editing" : "Edit customer"}
-          </button>
-          <button
-            type="button"
-            aria-label="More customer actions"
-            className="admin-control flex size-8 items-center justify-center"
-            title="Add tag, export, or delete customer"
-          >
-            <MoreHorizontal size={16} />
-          </button>
-        </div>
+        {onEdit && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="admin-control flex h-8 items-center gap-1.5 px-2.5 text-[12px] font-medium"
+            >
+              <Pencil size={13} />
+              {editing ? "Done editing" : "Edit customer"}
+            </button>
+            <button
+              type="button"
+              aria-label="More customer actions"
+              className="admin-control flex size-8 items-center justify-center"
+              title="Add tag, export, or delete customer"
+            >
+              <MoreHorizontal size={16} />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

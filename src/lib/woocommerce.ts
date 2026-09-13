@@ -42,14 +42,17 @@ class WooCommerceError extends Error {
   }
 }
 
-async function wooRequest<T>(path: string): Promise<{ data: T; totalPages: number }> {
+async function wooRequest<T>(
+  path: string,
+  namespace = "wc/v3",
+): Promise<{ data: T; totalPages: number }> {
   const {
     WOOCOMMERCE_URL: base,
     WOOCOMMERCE_CONSUMER_KEY: key,
     WOOCOMMERCE_CONSUMER_SECRET: secret,
   } = process.env;
   if (!base || !key || !secret) throw new Error("WooCommerce configuration is missing.");
-  const url = new URL(`wp-json/wc/v3/${path}`, `${base.replace(/\/$/, "")}/`);
+  const url = new URL(`wp-json/${namespace}/${path}`, `${base.replace(/\/$/, "")}/`);
   const headers = { Authorization: `Basic ${Buffer.from(`${key}:${secret}`).toString("base64")}` };
   const certPath = process.env.WOOCOMMERCE_LOCAL_CERT_PATH;
   if (certPath) {
@@ -388,4 +391,187 @@ export async function getWooCommerceOrderDetails(
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     timeline: timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
   };
+}
+
+interface WooCustomerReport {
+  id: number;
+  user_id: number | null;
+  name: string;
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+  date_registered: string | null;
+  date_registered_gmt: string | null;
+  date_last_active: string | null;
+  date_last_active_gmt: string | null;
+  date_last_order?: string | null;
+  orders_count: number;
+  total_spend: number | null;
+  avg_order_value: number | null;
+  country: string;
+  city: string;
+  state: string;
+  postcode: string;
+}
+
+async function getAllWooPages<T>(resource: string, namespace = "wc/v3"): Promise<T[]> {
+  const first = await wooRequest<T[]>(`${resource}&per_page=100&page=1`, namespace);
+  const records = [...first.data];
+  for (let page = 2; page <= first.totalPages; page++) {
+    records.push(
+      ...(await wooRequest<T[]>(`${resource}&per_page=100&page=${page}`, namespace)).data,
+    );
+  }
+  return records;
+}
+
+export async function getWooCommerceCustomers() {
+  const [customers, setting] = await Promise.all([
+    getAllWooPages<WooCustomerReport>(
+      "reports/customers?orderby=date_last_active&order=desc",
+      "wc-analytics",
+    ),
+    wooRequest<{ value: string }>("settings/general/woocommerce_currency"),
+  ]);
+  const currency = setting.data.value;
+  const records: import("@/types/customer").Customer[] = customers.map((customer) => {
+    const address = {
+      address1: "",
+      address2: "",
+      city: customer.city || "",
+      state: customer.state || "",
+      postcode: customer.postcode || "",
+      countryCode: customer.country || "",
+      country: customer.country || "",
+    };
+    return {
+      id: customer.id,
+      userId: customer.user_id,
+      firstName: customer.first_name || customer.name || customer.username || "Guest",
+      lastName: customer.first_name ? customer.last_name : "",
+      username: customer.username || "",
+      dateRegisteredLocal: customer.date_registered,
+      lastActiveDateLocal: customer.date_last_active,
+      email: customer.email,
+      phone: "",
+      avatar: null,
+      dateCreated: customer.date_registered_gmt
+        ? `${customer.date_registered_gmt}Z`
+        : customer.date_registered || "",
+      lastActiveDate: customer.date_last_active_gmt
+        ? `${customer.date_last_active_gmt}Z`
+        : customer.date_last_active,
+      billing: address,
+      shipping: address,
+      ordersCount: customer.orders_count,
+      totalSpent: String(customer.total_spend ?? 0),
+      averageOrderValue: String(customer.avg_order_value ?? 0),
+      hasAverageOrderValue: customer.avg_order_value !== null,
+      lastOrderDate: customer.date_last_order ?? null,
+      tags: [],
+      currency,
+    };
+  });
+  return { customers: records, currency };
+}
+
+interface WooCustomerProfile {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+  avatar_url: string;
+  billing: WooAddress;
+  shipping: WooAddress;
+}
+
+export async function getWooCommerceCustomerDetails(id: string) {
+  const guest = id.startsWith("guest-");
+  const numericId = guest ? id.slice(6) : id;
+  if (!/^[1-9]\d*$/.test(numericId) || !Number.isSafeInteger(Number(numericId))) return null;
+  const report = await getWooCommerceCustomers();
+  const customer = report.customers.find((item) =>
+    guest ? !item.userId && item.id === Number(numericId) : item.userId === Number(numericId),
+  );
+  if (!customer) return null;
+  let profile: WooCustomerProfile | null = null;
+  if (customer.userId) {
+    try {
+      profile = (await wooRequest<WooCustomerProfile>(`customers/${customer.userId}`)).data;
+    } catch (error) {
+      if (error instanceof WooCommerceError && error.status === 404) return null;
+      throw error;
+    }
+  }
+  const rawOrders = (
+    await getAllWooPages<WooOrderDetails>(
+      `orders?customer=${customer.userId || 0}&status=any&orderby=date&order=desc`,
+    )
+  ).filter(
+    (order) =>
+      !["trash", "checkout-draft", "auto-draft"].includes(order.status) &&
+      (customer.userId ||
+        (customer.email && order.billing.email.toLowerCase() === customer.email.toLowerCase())),
+  );
+  const orders = rawOrders.map(mapWooOrder);
+  const address = (value: WooAddress | undefined): import("@/types/customer").CustomerAddress => ({
+    firstName: value?.first_name || "",
+    lastName: value?.last_name || "",
+    company: value?.company || "",
+    address1: value?.address_1 || "",
+    address2: value?.address_2 || "",
+    city: value?.city || "",
+    state: value?.state || "",
+    postcode: value?.postcode || "",
+    country: value?.country || "",
+    countryCode: value?.country || "",
+  });
+  const billing = profile?.billing ?? rawOrders[0]?.billing;
+  const shipping = profile?.shipping ?? rawOrders[0]?.shipping;
+  const timeline = orders.map((order) => ({
+    id: order.id,
+    title: `Order #${order.number} placed`,
+    description: `${order.itemsCount} items · ${order.currency} ${order.total}`,
+    date: order.dateCreated,
+  }));
+  if (customer.dateCreated)
+    timeline.push({
+      id: -1,
+      title: "Customer registered",
+      description: "Store account created",
+      date: customer.dateCreated,
+    });
+  const details: import("@/types/customer").CustomerDetails = {
+    ...customer,
+    readOnly: true,
+    firstName: profile?.first_name || customer.firstName,
+    lastName: profile?.last_name || customer.lastName,
+    email: profile?.email || customer.email,
+    phone: billing?.phone || "",
+    avatar: profile?.avatar_url || null,
+    billing: address(billing),
+    shipping: address(shipping),
+    daysSinceLastOrder: orders[0]
+      ? Math.max(
+          0,
+          Math.floor((Date.now() - new Date(orders[0].dateCreated).getTime()) / 86_400_000),
+        )
+      : null,
+    firstOrderDate: orders.at(-1)?.dateCreated ?? null,
+    lastOrderDate: orders[0]?.dateCreated ?? null,
+    refundsCount: rawOrders.reduce((sum, order) => sum + order.refunds.length, 0),
+    favoriteCategory: "—",
+    notes: rawOrders
+      .filter((order) => order.customer_note)
+      .map((order) => ({
+        id: order.id,
+        text: order.customer_note,
+        date: order.date_created_gmt ? `${order.date_created_gmt}Z` : order.date_created,
+        author: `Customer at checkout · Order #${order.number}`,
+      })),
+    timeline: timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+  };
+  return { customer: details, orders };
 }
