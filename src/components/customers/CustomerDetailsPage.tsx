@@ -38,7 +38,7 @@ export function CustomerDetailsPage({
   };
   const sameAddress = JSON.stringify(customer.billing) === JSON.stringify(customer.shipping);
   return (
-    <main className="mx-auto max-w-[1240px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <main className="mx-auto page-container px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <CustomerHeader
         customer={customer}
         editing={editing}

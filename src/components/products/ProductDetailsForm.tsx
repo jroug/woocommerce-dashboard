@@ -69,7 +69,7 @@ export function ProductDetailsForm({
   };
 
   return (
-    <main className="mx-auto max-w-[1240px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <main className="mx-auto page-container px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <ProductHeader
         title={product.name}
         status={product.status}

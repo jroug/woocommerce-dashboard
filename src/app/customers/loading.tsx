@@ -3,7 +3,7 @@ import { CustomersTableSkeleton } from "@/components/customers/CustomersStates";
 export default function LoadingCustomers() {
   return (
     <AppShell activeSection="customers" mobileTitle="Customers">
-      <main className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto page-container px-4 py-6 sm:px-6 lg:px-8">
         <div className="skeleton mb-4 h-7 w-32 rounded" />
         <div className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-lg)] border bg-[var(--color-border)] sm:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (

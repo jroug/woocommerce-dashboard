@@ -4,7 +4,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 export default function ProductsError({ reset }: { reset: () => void }) {
   return (
     <AppShell activeSection="products" mobileTitle="Products">
-      <main className="mx-auto max-w-[1240px] px-6 py-6">
+      <main className="mx-auto page-container px-6 py-6">
         <section className="admin-card p-8 text-center" role="alert">
           <h1 className="text-lg font-semibold">Unable to load products</h1>
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">

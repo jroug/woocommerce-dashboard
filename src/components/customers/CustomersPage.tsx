@@ -171,7 +171,7 @@ export function CustomersPage({
       return next;
     });
   return (
-    <main className="mx-auto max-w-[1240px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <main className="mx-auto page-container px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold leading-7 tracking-[-.02em]">Customers</h1>

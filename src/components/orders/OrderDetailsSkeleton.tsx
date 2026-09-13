@@ -1,6 +1,6 @@
 export function OrderDetailsSkeleton() {
   return (
-    <main className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8" aria-hidden="true">
+    <main className="mx-auto page-container px-4 py-6 sm:px-6 lg:px-8" aria-hidden="true">
       <div className="skeleton mb-4 h-8 w-64 rounded-[var(--radius-md)]" />
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">

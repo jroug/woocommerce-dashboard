@@ -11,7 +11,7 @@ import { OrderTotals } from "./OrderTotals";
 
 export function OrderDetailsPage({ order }: { order: OrderDetails }) {
   return (
-    <main className="mx-auto max-w-[1240px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <main className="mx-auto page-container px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <OrderHeader order={order} />
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-3">

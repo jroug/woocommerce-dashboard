@@ -1,7 +1,7 @@
 export function ProductDetailsSkeleton() {
   return (
     <main
-      className="mx-auto max-w-[1240px] animate-pulse px-4 py-6 sm:px-6 lg:px-8"
+      className="mx-auto page-container animate-pulse px-4 py-6 sm:px-6 lg:px-8"
       aria-label="Loading product"
       aria-busy="true"
     >

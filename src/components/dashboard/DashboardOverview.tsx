@@ -22,7 +22,7 @@ export function DashboardOverview() {
   // The range controls KPI cards and revenue only; the other panels use fixed summaries.
   const period = dashboardPeriods[range];
   return (
-    <main className="mx-auto max-w-[1240px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <main className="mx-auto page-container px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[22px] font-semibold leading-7 tracking-[-.02em] text-[var(--color-text)]">
