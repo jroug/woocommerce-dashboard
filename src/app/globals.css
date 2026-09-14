@@ -59,6 +59,44 @@
   max-width: 1700px;
 }
 
+.product-rich-text-content {
+  min-height: 8rem;
+  padding: 0.625rem;
+  color: var(--color-text);
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.product-rich-text-content p,
+.product-rich-text-content ul,
+.product-rich-text-content ol {
+  margin: 0 0 0.75rem;
+}
+
+.product-rich-text-content p:last-child,
+.product-rich-text-content ul:last-child,
+.product-rich-text-content ol:last-child {
+  margin-bottom: 0;
+}
+
+.product-rich-text-content ul,
+.product-rich-text-content ol {
+  padding-left: 1.25rem;
+}
+
+.product-rich-text-content ul {
+  list-style: disc;
+}
+
+.product-rich-text-content ol {
+  list-style: decimal;
+}
+
+.product-rich-text-content.ProseMirror-focused {
+  box-shadow: inset 0 0 0 2px var(--color-focus);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

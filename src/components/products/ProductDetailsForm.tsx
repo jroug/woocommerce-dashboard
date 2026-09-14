@@ -56,13 +56,11 @@ export function ProductDetailsForm({
   }, [dirty]);
 
   const updateProduct = (patch: Partial<ProductDetails>) => {
-    if (initialProduct.readOnly) return;
     setSaved(false);
     setProduct((current) => ({ ...current, ...patch }));
   };
-  // Saving advances the local baseline only; no API or durable storage is connected.
+  // Saving advances the local baseline only; no WooCommerce write is made.
   const saveProduct = () => {
-    if (initialProduct.readOnly) return;
     setAttemptedSave(true);
     if (Object.keys(errors).length > 0) return;
     setSavedProduct(product);
@@ -73,17 +71,13 @@ export function ProductDetailsForm({
   return (
     <main className="mx-auto page-container px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <ProductHeader
-        readOnly={product.readOnly}
         title={product.name}
         status={product.status}
         dirty={dirty}
         saved={saved}
         onSave={saveProduct}
       />
-      <fieldset
-        disabled={product.readOnly}
-        className="m-0 grid min-w-0 items-start gap-4 border-0 p-0 lg:grid-cols-[minmax(0,1fr)_320px]"
-      >
+      <fieldset className="m-0 grid min-w-0 items-start gap-4 border-0 p-0 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
           <ProductInformation
             product={product}

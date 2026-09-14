@@ -1,5 +1,6 @@
 import type { ProductDetails } from "@/types/product";
-import { FormField, TextArea, TextInput } from "./ProductFormField";
+import { FormField, TextInput } from "./ProductFormField";
+import { RichTextEditor } from "./RichTextEditor";
 export function ProductInformation({
   product,
   onChange,
@@ -17,21 +18,19 @@ export function ProductInformation({
           <TextInput value={product.name} onChange={(e) => onChange({ name: e.target.value })} />
         </FormField>
         <FormField label="Description" helper="Describe the product's key features and materials.">
-          <TextArea
-            rows={7}
+          <RichTextEditor
             value={product.description}
-            onChange={(e) => onChange({ description: e.target.value })}
+            onChange={(description) => onChange({ description })}
+            ariaLabel="Product description"
           />
         </FormField>
-        {product.shortDescription && (
-          <FormField label="Short description">
-            <TextArea
-              rows={3}
-              value={product.shortDescription}
-              onChange={(e) => onChange({ shortDescription: e.target.value })}
-            />
-          </FormField>
-        )}
+        <FormField label="Short description">
+          <RichTextEditor
+            value={product.shortDescription ?? ""}
+            onChange={(shortDescription) => onChange({ shortDescription })}
+            ariaLabel="Product short description"
+          />
+        </FormField>
       </div>
     </section>
   );
