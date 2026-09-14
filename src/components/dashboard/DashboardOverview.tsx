@@ -1,14 +1,7 @@
 "use client";
 import { useState } from "react";
 import { CalendarDays } from "lucide-react";
-import {
-  dashboardPeriods,
-  inventorySummary,
-  orderStatuses,
-  recentOrders,
-  topProducts,
-} from "@/data/dashboardMockData";
-import type { DateRange } from "@/types/dashboard";
+import type { DashboardData, DateRange } from "@/types/dashboard";
 import { InventoryAlerts } from "./InventoryAlerts";
 import { OrderStatus } from "./OrderStatus";
 import { QuickActions } from "./QuickActions";
@@ -17,10 +10,15 @@ import { RevenueChart } from "./RevenueChart";
 import { StatCard } from "./StatCard";
 import { TopProducts } from "./TopProducts";
 
-export function DashboardOverview() {
+export function DashboardOverview({ dashboard }: { dashboard: DashboardData }) {
   const [range, setRange] = useState<DateRange>("7d");
-  // The range controls KPI cards and revenue only; the other panels use fixed summaries.
-  const period = dashboardPeriods[range];
+  const period = dashboard.periods[range];
+  const today = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date());
   return (
     <main className="mx-auto page-container px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -29,7 +27,7 @@ export function DashboardOverview() {
             Dashboard
           </h1>
           <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
-            Saturday, August 29 · Here&apos;s what&apos;s happening with your store.
+            {today} · Here&apos;s what&apos;s happening with your store.
           </p>
         </div>
         <label className="admin-control flex items-center gap-2 self-start px-3 sm:self-auto">
@@ -58,15 +56,22 @@ export function DashboardOverview() {
         ))}
       </section>
       <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
-        <RevenueChart data={period.revenue} />
-        <OrderStatus items={orderStatuses} />
+        <RevenueChart data={period.revenue} currency={dashboard.currency} />
+        <OrderStatus
+          items={period.orderStatuses}
+          totalOrders={
+            period.stats.find((stat) => stat.id === "orders")
+              ? Number(period.stats.find((stat) => stat.id === "orders")?.value.replaceAll(",", ""))
+              : 0
+          }
+        />
       </div>
       <div className="mt-3 grid min-w-0 gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
-        <RecentOrders orders={recentOrders} />
-        <TopProducts products={topProducts} />
+        <RecentOrders orders={dashboard.recentOrders} />
+        <TopProducts products={period.topProducts} currency={dashboard.currency} />
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        <InventoryAlerts summary={inventorySummary} />
+        <InventoryAlerts summary={dashboard.inventorySummary} />
         <QuickActions />
       </div>
     </main>

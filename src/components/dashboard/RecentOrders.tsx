@@ -4,7 +4,6 @@ import type { Order } from "@/types/order";
 import { Panel } from "./Panel";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
 
-const currency = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
 const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 export function RecentOrders({ orders }: { orders: Order[] }) {
   return (
@@ -36,8 +35,10 @@ export function RecentOrders({ orders }: { orders: Order[] }) {
           </thead>
           <tbody className="divide-y">
             {orders.map((order) => {
-              const customerName = `${order.customer.firstName} ${order.customer.lastName}`;
-              const initials = `${order.customer.firstName[0]}${order.customer.lastName[0]}`;
+              const customerName =
+                `${order.customer.firstName} ${order.customer.lastName}`.trim() || "Guest";
+              const initials =
+                `${order.customer.firstName[0] ?? ""}${order.customer.lastName[0] ?? ""}` || "G";
               return (
                 <tr
                   key={order.id}
@@ -63,7 +64,10 @@ export function RecentOrders({ orders }: { orders: Order[] }) {
                     <OrderStatusBadge status={order.status} />
                   </td>
                   <td className="px-5 py-2.5 text-right font-semibold tabular-nums text-[var(--color-text)]">
-                    {currency.format(Number(order.total))}
+                    {new Intl.NumberFormat("en-IE", {
+                      style: "currency",
+                      currency: order.currency,
+                    }).format(Number(order.total))}
                   </td>
                 </tr>
               );

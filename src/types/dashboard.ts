@@ -1,6 +1,7 @@
 export type DateRange = "7d" | "30d" | "12m";
 export type TrendDirection = "up" | "down";
-export type OrderStatus = "processing" | "pending" | "completed" | "cancelled" | "refunded";
+export type DashboardOrderStatus =
+  "processing" | "pending" | "on-hold" | "completed" | "cancelled" | "refunded" | "failed";
 export interface Stat {
   id: "revenue" | "orders" | "average-order-value" | "customers";
   label: string;
@@ -16,8 +17,13 @@ export interface DashboardPeriod {
   stats: Stat[];
   revenue: RevenuePoint[];
 }
+
+export interface DashboardLivePeriod extends DashboardPeriod {
+  orderStatuses: OrderStatusSummary[];
+  topProducts: TopProduct[];
+}
 export interface OrderStatusSummary {
-  status: OrderStatus;
+  status: DashboardOrderStatus;
   label: string;
   count: number;
 }
@@ -32,4 +38,11 @@ export interface TopProduct {
 export interface InventorySummary {
   lowStock: number;
   outOfStock: number;
+}
+
+export interface DashboardData {
+  periods: Record<DateRange, DashboardLivePeriod>;
+  recentOrders: import("@/types/order").Order[];
+  inventorySummary: InventorySummary;
+  currency: string;
 }

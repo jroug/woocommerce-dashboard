@@ -2,9 +2,18 @@ import { Panel } from "./Panel";
 import { StatusBadge } from "./StatusBadge";
 import type { OrderStatusSummary } from "@/types/dashboard";
 
-export function OrderStatus({ items }: { items: OrderStatusSummary[] }) {
+export function OrderStatus({
+  items,
+  totalOrders,
+}: {
+  items: OrderStatusSummary[];
+  totalOrders: number;
+}) {
   return (
-    <Panel title="Order status" description="382 orders this period">
+    <Panel
+      title="Order status"
+      description={`${totalOrders.toLocaleString()} ${totalOrders === 1 ? "order" : "orders"} this period`}
+    >
       <ul className="mt-3 divide-y px-4 pb-2 sm:px-5">
         {items.map((item) => (
           <li className="flex items-center justify-between py-2.5" key={item.status}>

@@ -10,6 +10,17 @@ import type {
   ProductStatus,
   StockStatus,
 } from "@/types/product";
+import type {
+  DashboardData,
+  DashboardOrderStatus,
+  DashboardLivePeriod,
+  DateRange,
+  InventorySummary,
+  OrderStatusSummary,
+  RevenuePoint,
+  Stat,
+  TopProduct,
+} from "@/types/dashboard";
 
 interface WooProduct {
   id: number;
@@ -481,6 +492,227 @@ export async function getWooCommerceCustomers() {
     };
   });
   return { customers: records, currency };
+}
+
+const dashboardStatusOrder: DashboardOrderStatus[] = [
+  "processing",
+  "pending",
+  "on-hold",
+  "completed",
+  "cancelled",
+  "refunded",
+  "failed",
+];
+
+const dashboardStatusLabels: Record<DashboardOrderStatus, string> = {
+  processing: "Processing",
+  pending: "Pending payment",
+  "on-hold": "On hold",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  refunded: "Refunded",
+  failed: "Failed",
+};
+
+const productColors = ["#cf7443", "#426b57", "#637995", "#a98451", "#736a8d"];
+
+function periodBounds(range: DateRange, now: Date) {
+  const end = new Date(now);
+  const start = new Date(now);
+  const previousStart = new Date(now);
+  if (range === "7d") {
+    start.setUTCDate(start.getUTCDate() - 6);
+    previousStart.setUTCDate(previousStart.getUTCDate() - 13);
+  } else if (range === "30d") {
+    start.setUTCDate(start.getUTCDate() - 29);
+    previousStart.setUTCDate(previousStart.getUTCDate() - 59);
+  } else {
+    start.setUTCMonth(start.getUTCMonth() - 11, 1);
+    start.setUTCHours(0, 0, 0, 0);
+    previousStart.setUTCMonth(previousStart.getUTCMonth() - 23, 1);
+    previousStart.setUTCHours(0, 0, 0, 0);
+  }
+  if (range !== "12m") {
+    start.setUTCHours(0, 0, 0, 0);
+    previousStart.setUTCHours(0, 0, 0, 0);
+  }
+  return { start, end, previousStart };
+}
+
+function isBetween(value: string, start: Date, end: Date) {
+  const date = new Date(value).getTime();
+  return date >= start.getTime() && date <= end.getTime();
+}
+
+function change(current: number, previous: number) {
+  if (previous === 0) return { change: 0, direction: "up" as const };
+  const amount = ((current - previous) / previous) * 100;
+  return {
+    change: Math.abs(Number(amount.toFixed(1))),
+    direction: amount >= 0 ? ("up" as const) : ("down" as const),
+  };
+}
+
+function revenueBuckets(
+  range: DateRange,
+  now: Date,
+  orders: import("@/types/order").Order[],
+): RevenuePoint[] {
+  const { start, end } = periodBounds(range, now);
+  const bucketCount = range === "7d" ? 7 : range === "30d" ? 6 : 12;
+  const bucketDays = range === "7d" ? 1 : range === "30d" ? 5 : 0;
+  const formatter = new Intl.DateTimeFormat(
+    "en-US",
+    range === "12m"
+      ? { month: "short", timeZone: "UTC" }
+      : { month: "short", day: "numeric", timeZone: "UTC" },
+  );
+  return Array.from({ length: bucketCount }, (_, index) => {
+    const bucketStart = new Date(start);
+    if (range === "12m") bucketStart.setUTCMonth(bucketStart.getUTCMonth() + index);
+    else bucketStart.setUTCDate(bucketStart.getUTCDate() + index * bucketDays);
+    const bucketEnd = new Date(bucketStart);
+    if (range === "12m") bucketEnd.setUTCMonth(bucketEnd.getUTCMonth() + 1);
+    else bucketEnd.setUTCDate(bucketEnd.getUTCDate() + bucketDays);
+    bucketEnd.setTime(Math.min(bucketEnd.getTime() - 1, end.getTime()));
+    const revenue = orders
+      .filter(
+        (order) =>
+          ["processing", "completed"].includes(order.status) &&
+          isBetween(order.dateCreated, bucketStart, bucketEnd),
+      )
+      .reduce((sum, order) => sum + Number(order.total), 0);
+    return { label: formatter.format(bucketStart), revenue };
+  });
+}
+
+export async function getWooCommerceDashboard(): Promise<DashboardData> {
+  const [{ products, currency }, orders, { customers }] = await Promise.all([
+    getWooCommerceProducts(),
+    getWooCommerceOrders(),
+    getWooCommerceCustomers(),
+  ]);
+  const now = new Date();
+  const inventorySummary: InventorySummary = products.reduce(
+    (summary, product) => {
+      if (product.stockStatus === "outofstock" || product.stockQuantity === 0)
+        summary.outOfStock += 1;
+      else if (
+        product.manageStock &&
+        product.stockQuantity !== null &&
+        product.stockQuantity <= product.lowStockThreshold
+      )
+        summary.lowStock += 1;
+      return summary;
+    },
+    { lowStock: 0, outOfStock: 0 },
+  );
+  const periods = (Object.keys({ "7d": true, "30d": true, "12m": true }) as DateRange[]).reduce(
+    (all, range) => {
+      const { start, end, previousStart } = periodBounds(range, now);
+      const currentOrders = orders.filter((order) => isBetween(order.dateCreated, start, end));
+      const previousOrders = orders.filter((order) =>
+        isBetween(order.dateCreated, previousStart, new Date(start.getTime() - 1)),
+      );
+      const paid = currentOrders.filter((order) =>
+        ["processing", "completed"].includes(order.status),
+      );
+      const previousPaid = previousOrders.filter((order) =>
+        ["processing", "completed"].includes(order.status),
+      );
+      const revenue = paid.reduce((sum, order) => sum + Number(order.total), 0);
+      const previousRevenue = previousPaid.reduce((sum, order) => sum + Number(order.total), 0);
+      const currentCustomers = customers.filter(
+        (customer) => customer.dateCreated && isBetween(customer.dateCreated, start, end),
+      ).length;
+      const previousCustomers = customers.filter(
+        (customer) =>
+          customer.dateCreated &&
+          isBetween(customer.dateCreated, previousStart, new Date(start.getTime() - 1)),
+      ).length;
+      const averageOrderValue = paid.length ? revenue / paid.length : 0;
+      const previousAov = previousPaid.length ? previousRevenue / previousPaid.length : 0;
+      const money = new Intl.NumberFormat("en-IE", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 2,
+      });
+      const stats: Stat[] = [
+        {
+          id: "revenue",
+          label: "Revenue",
+          value: money.format(revenue),
+          ...change(revenue, previousRevenue),
+        },
+        {
+          id: "orders",
+          label: "Orders",
+          value: currentOrders.length.toLocaleString(),
+          ...change(currentOrders.length, previousOrders.length),
+        },
+        {
+          id: "average-order-value",
+          label: "Average order value",
+          value: money.format(averageOrderValue),
+          ...change(averageOrderValue, previousAov),
+        },
+        {
+          id: "customers",
+          label: "New customers",
+          value: currentCustomers.toLocaleString(),
+          ...change(currentCustomers, previousCustomers),
+        },
+      ];
+      const orderStatuses: OrderStatusSummary[] = dashboardStatusOrder.map((status) => ({
+        status,
+        label: dashboardStatusLabels[status],
+        count: currentOrders.filter((order) => order.status === status).length,
+      }));
+      const byProduct = new Map<number, { name: string; unitsSold: number; revenue: number }>();
+      paid.forEach((order) =>
+        order.lineItems.forEach((item) => {
+          const current = byProduct.get(item.productId) ?? {
+            name: item.name,
+            unitsSold: 0,
+            revenue: 0,
+          };
+          current.unitsSold += item.quantity;
+          current.revenue += Number(item.total);
+          byProduct.set(item.productId, current);
+        }),
+      );
+      const topProducts: TopProduct[] = [...byProduct.entries()]
+        .map(([id, item], index) => {
+          const product = products.find((candidate) => candidate.id === id);
+          return {
+            id: String(id),
+            name: item.name,
+            category: product?.category.name ?? "Uncategorized",
+            unitsSold: item.unitsSold,
+            revenue: item.revenue,
+            color: productColors[index % productColors.length],
+          };
+        })
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
+      all[range] = {
+        stats,
+        revenue: revenueBuckets(range, now, orders),
+        orderStatuses,
+        topProducts,
+      };
+      return all;
+    },
+    {} as Record<DateRange, DashboardLivePeriod>,
+  );
+  return {
+    periods,
+    recentOrders: [...orders]
+      .sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime())
+      .slice(0, 5),
+    inventorySummary,
+    currency,
+  };
 }
 
 interface WooCustomerProfile {

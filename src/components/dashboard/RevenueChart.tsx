@@ -11,14 +11,18 @@ import {
 import type { RevenuePoint } from "@/types/dashboard";
 import { Panel } from "./Panel";
 
-const currency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-export function RevenueChart({ data }: { data: RevenuePoint[] }) {
+export function RevenueChart({ data, currency }: { data: RevenuePoint[]; currency: string }) {
+  const money = new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  });
   return (
-    <Panel title="Revenue" description="Net revenue for the selected period" className="min-w-0">
+    <Panel
+      title="Revenue"
+      description="Revenue from paid orders in the selected period"
+      className="min-w-0"
+    >
       <div
         className="h-[250px] w-full px-1 pb-3 pt-4 sm:h-[280px] sm:px-3"
         role="img"
@@ -44,11 +48,15 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
               tickLine={false}
               axisLine={false}
               tick={{ fill: "#8a8a8a", fontSize: 11 }}
-              tickFormatter={(value) => `$${value >= 1000 ? `${value / 1000}k` : value}`}
+              tickFormatter={(value) =>
+                money
+                  .format(value >= 1000 ? value / 1000 : value)
+                  .replace(/\s?\d+(?:\.\d+)?/, value >= 1000 ? `${value / 1000}k` : String(value))
+              }
             />
             <Tooltip
               cursor={{ stroke: "#b5b5b5", strokeDasharray: "3 3" }}
-              formatter={(value) => [currency.format(Number(value)), "Revenue"]}
+              formatter={(value) => [money.format(Number(value)), "Revenue"]}
               contentStyle={{
                 border: "1px solid #dedede",
                 borderRadius: 8,

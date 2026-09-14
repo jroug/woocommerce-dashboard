@@ -1,14 +1,19 @@
 import type { TopProduct } from "@/types/dashboard";
 import { Panel } from "./Panel";
-const currency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-export function TopProducts({ products }: { products: TopProduct[] }) {
+export function TopProducts({ products, currency }: { products: TopProduct[]; currency: string }) {
+  const money = new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  });
   return (
     <Panel title="Top products" description="Best sellers by revenue">
       <ol className="mt-3 divide-y px-4 pb-2 sm:px-5">
+        {products.length === 0 && (
+          <li className="py-6 text-center text-[12px] text-[var(--color-text-muted)]">
+            No paid product sales in this period.
+          </li>
+        )}
         {products.map((product, index) => (
           <li
             className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5 py-2.5"
@@ -31,7 +36,7 @@ export function TopProducts({ products }: { products: TopProduct[] }) {
               </span>
             </span>
             <span className="text-[13px] font-semibold tabular-nums text-[var(--color-text)]">
-              {currency.format(product.revenue)}
+              {money.format(product.revenue)}
             </span>
           </li>
         ))}
